@@ -1,0 +1,322 @@
+import matplotlib.pyplot as plt 
+from matplotlib import colors
+import numpy as np
+import random
+import math
+import random
+
+#Dit is de functie die de som berekent van de 8 vakjes om een vakje 
+def som(i, j, grid, rij, kolom, simulatie):
+    som = grid[(i+1)%rij][j] + grid[i-1][j] + grid[i][(j+1)%kolom] + grid[i][j-1] + grid[(i+1)%rij][(j+1)%kolom] + grid[i-1][j-1] + grid[(i+1)%rij][j-1] + grid[i-1][(j+1)%kolom]
+    if simulatie == 'CA_2D':
+        return som
+    elif simulatie == 'CORONA_MACRO':
+        if grid[(i+1)%rij][j] == 2:
+            som = som - 2
+        if grid[i-1][j] == 2:
+            som = som - 2
+        if grid[i][(j+1)%kolom] == 2:
+            som = som - 2
+        if grid[i][j-1] == 2:
+            som = som - 2
+        if grid[(i+1)%rij][(j+1)%kolom] == 2 :
+            som = som - 2
+        if grid[i-1][j-1] == 2:
+            som = som - 2
+        if grid[(i+1)%rij][j-1] == 2:
+            som = som - 2
+        if grid[i-1][(j+1)%kolom] == 2:
+            som = som - 2
+        return som
+#Dit is de functie 
+def plot(x, y, statuslijst, ax):
+    gezondlijstx = []
+    gezondlijsty = []
+    geinfecteerdlijstx = []
+    geinfecteerdlijsty = []
+    for i in range(0, len(statuslijst), 1):
+        if statuslijst[i] == 'gezond':
+            gezondlijstx.append(x[i])
+            gezondlijsty.append(y[i])
+        else:
+            geinfecteerdlijstx.append(x[i])
+            geinfecteerdlijsty.append(y[i])
+        ax.scatter(gezondlijstx, gezondlijsty, color='blue')
+        ax.scatter(geinfecteerdlijstx, geinfecteerdlijsty, color='#E6CE2B')
+
+class Bord:
+    def __init__(self, rij, kolom, simulatie, tijdstap, invulling):
+        self.rij = rij
+        self.kolom = kolom
+        self.simulatie = simulatie
+        self.tijdstap = tijdstap
+        self.invulling = invulling
+    
+    def vertoon(self):
+        if self.simulatie == 'CA_2D':
+            if self.invulling == 'random':
+                grid = np.random.choice([1, 0], self.rij*self.kolom, p=[0.2, 0.8]).reshape(self.rij, self.kolom)
+                fig, ax = plt.subplots()
+                ax.imshow(grid)
+            elif type(self.invulling) == np.ndarray:
+                fig, ax = plt.subplots()
+                ax.imshow(self.invulling)
+            else:
+                print('Ingevoerde invulling is niet compatibel met dit programma')
+        elif self.simulatie == 'CORONA_MACRO':
+            if self.invulling == 'random':
+                grid = np.random.choice([0, 1, 2], self.rij*self.kolom, p=[0.8, 0.2, 0]).reshape(self.rij, self.kolom)
+                fig, ax = plt.subplots()
+                bounds = [0, 1, 2, 3]
+                cmap = colors.ListedColormap(['green', 'yellow','red'])
+                norm = colors.BoundaryNorm(bounds, cmap.N)
+                ax.imshow(grid, cmap=cmap, norm=norm)
+            elif type(self.invulling) == np.ndarray:
+                fig, ax = plt.subplots()
+                bounds = [0, 1, 2, 3]
+                cmap = colors.ListedColormap(['green', 'yellow','red'])
+                norm = colors.BoundaryNorm(bounds, cmap.N)
+                ax.imshow(self.invulling, cmap=cmap, norm=norm)
+            else:
+                print('Ingevoerde invulling is niet compatibel met dit programma')
+        elif self.simulatie == 'CORONA_MICRO':
+            if self.invulling == 'random':
+                breedte = self.kolom
+                lengte = self.rij
+                xrandnums= np.random.randint(1, breedte, 100)
+                yrandnums= np.random.randint(1, lengte, 100)
+                statuslijst = np.random.choice(['geinfecteerd', 'gezond'], 100, p=[0.2, 0.8])
+                fig, ax = plt.subplots()
+                plot(xrandnums, yrandnums, statuslijst, ax)
+            elif type(self.invulling) == list:
+                breedte = self.kolom
+                lengte = self.rij                
+                xrandnums= np.random.randint(1, breedte, 100 - len(self.invulling))
+                yrandnums= np.random.randint(1, lengte, 100 - len(self.invulling))
+                statuslijst = np.random.choice(['geinfecteerd', 'gezond'], 100-len(self.invulling), p=[0, 1])
+                for i in range(0, len(self.invulling), 1):
+                    xrandnums = np.append(xrandnums, self.invulling[i][0])
+                    yrandnums = np.append(yrandnums, self.invulling[i][1])
+                    statuslijst = np.append(statuslijst, 'geinfecteerd')
+                fig, ax = plt.subplots()
+                plot(xrandnums, yrandnums, statuslijst, ax)
+            else:
+                print('Ingevoerde invulling is niet compatibel met dit programma')
+        else:
+            print('Ingevoerde simulatie is niet compatibel met dit programma')
+    
+    def speel(self):
+        if self.simulatie == 'CA_2D':
+            if self.invulling == 'random':
+                grid = np.random.choice([1, 0], self.rij*self.kolom, p=[0.2, 0.8]).reshape(self.rij, self.kolom)
+                fig, ax = plt.subplots()
+                ax.imshow(grid)
+                while True:
+                    newgrid = np.array([0]*(self.rij*self.kolom)).reshape(self.rij, self.kolom)
+                    plt.pause(self.tijdstap)
+                    for i in range(0, len(grid), 1):
+                        for j in range(0, len(grid[i]), 1):
+                            if grid[i][j] == 1:
+                                if som(i, j, grid, self.rij, self.kolom, 'CA_2D') == 2 or som(i, j, grid, self.rij, self.kolom, 'CA_2D') == 3:
+                                    newgrid[i][j] = 1
+                                else:
+                                    newgrid[i][j] = 0
+                            else:
+                                if som(i, j, grid, self.rij, self.kolom, 'CA_2D') == 3:
+                                    newgrid[i][j] = 1
+                                else: 
+                                    newgrid[i][j]= 0
+                    ax.clear()
+                    grid = np.copy(newgrid)
+                    ax.imshow(grid)
+            elif type(self.invulling) == np.ndarray:
+                fig, ax = plt.subplots()
+                ax.imshow(self.invulling)
+                grid = self.invulling
+                while True:
+                    newgrid = np.array([0]*(self.rij*self.kolom)).reshape(self.rij, self.kolom)
+                    plt.pause(self.tijdstap)
+                    for i in range(0, len(grid), 1):
+                        for j in range(0, len(grid[i]), 1):
+                            if grid[i][j] == 1:
+                                if som(i, j, grid, self.rij, self.kolom, 'CA_2D') == 2 or som(i, j, grid, self.rij, self.kolom, 'CA_2D') == 3:
+                                    newgrid[i][j] = 1
+                                else:
+                                    newgrid[i][j] = 0
+                            else:
+                                if som(i, j, grid, self.rij, self.kolom, 'CA_2D') == 3:
+                                    newgrid[i][j] = 1
+                                else: 
+                                    newgrid[i][j]= 0
+                    ax.clear()
+                    grid = np.copy(newgrid)
+                    ax.imshow(grid)
+                
+            else:
+                print('Ingevoerde invulling is niet compatibel met dit programma')
+        elif self.simulatie == 'CORONA_MACRO':
+            if self.invulling == 'random':
+                kans_op_infectie = 5
+                kans_op_sterven = 20
+                kans_op_genezing = 20
+                grid = np.random.choice([0, 1, 2], self.rij*self.kolom, p=[0.8, 0.2, 0]).reshape(self.rij, self.kolom)
+                fig, ax = plt.subplots()
+                bounds = [0, 1, 2, 3]
+                cmap = colors.ListedColormap(['green', 'yellow','red'])
+                norm = colors.BoundaryNorm(bounds, cmap.N)
+                ax.imshow(grid, cmap=cmap, norm=norm)
+                while True:
+                    newgrid = np.array([0]*(self.rij*self.kolom)).reshape(self.rij, self.kolom)
+                    plt.show()
+                    plt.pause(self.tijdstap)
+                    
+                    for i in range(0, len(grid), 1):
+                        for j in range(0, len(grid[i]), 1):
+                           kans = random.randint(0, 100)
+                           kans2 = random.randint(0, 100)
+                           kans3 = random.randint(0, 100)
+                           if grid[i][j] == 2:
+                                newgrid[i][j] = 2
+                
+                           if grid[i][j] == 1:
+                               if kans < kans_op_sterven:
+                                   newgrid[i][j] = 2
+                                    
+                               if kans > kans_op_sterven and kans2 < kans_op_genezing:
+                                   newgrid[i][j] = 0
+                                    
+                               if kans > kans_op_sterven and kans2 > kans_op_genezing:
+                                   newgrid[i][j] = 1
+                                        
+                           if grid[i][j] == 0:
+                               if kans3 < kans_op_infectie * som(i, j, grid, self.rij, self.kolom, 'CORONA_MACRO'):
+                                   newgrid[i][j] = 1
+                               else:
+                                   newgrid[i][j] = 0
+                    ax.clear()
+                    grid = np.copy(newgrid)
+                    ax.imshow(grid, cmap=cmap, norm=norm)
+                    plt.show()
+            elif type(self.invulling) == np.ndarray:
+                kans_op_infectie = 5
+                kans_op_sterven = 20
+                kans_op_genezing = 20
+                grid = self.invulling
+                fig, ax = plt.subplots()
+                bounds = [0, 1, 2, 3]
+                cmap = colors.ListedColormap(['green', 'yellow','red'])
+                norm = colors.BoundaryNorm(bounds, cmap.N)
+                ax.imshow(grid, cmap=cmap, norm=norm)
+                while True:
+                    newgrid = np.array([0]*(self.rij*self.kolom)).reshape(self.rij, self.kolom)
+                    plt.show()
+                    plt.pause(self.tijdstap)
+                    
+                    for i in range(0, len(grid), 1):
+                        for j in range(0, len(grid[i]), 1):
+                           kans = random.randint(0, 100)
+                           kans2 = random.randint(0, 100)
+                           kans3 = random.randint(0, 100)
+                           if grid[i][j] == 2:
+                                newgrid[i][j] = 2
+                
+                           if grid[i][j] == 1:
+                               if kans < kans_op_sterven:
+                                   newgrid[i][j] = 2
+                                    
+                               if kans > kans_op_sterven and kans2 < kans_op_genezing:
+                                   newgrid[i][j] = 0
+                                    
+                               if kans > kans_op_sterven and kans2 > kans_op_genezing:
+                                   newgrid[i][j] = 1
+                                        
+                           if grid[i][j] == 0:
+                               if kans3 < kans_op_infectie * som(i, j, grid, self.rij, self.kolom, 'CORONA_MACRO'):
+                                   newgrid[i][j] = 1
+                               else:
+                                   newgrid[i][j] = 0
+                    ax.clear()
+                    grid = np.copy(newgrid)
+                    ax.imshow(grid, cmap=cmap, norm=norm)
+                    plt.show()
+            else:
+                print('Ingevoerde invulling is niet compatibel met dit programma')
+        elif self.simulatie == 'CORONA_MICRO':
+            if self.invulling == 'random':
+                
+                afstandlijst = []
+                infectiekanslijst = []
+                
+                breedte = self.kolom
+                lengte = self.rij
+                xrandnums= np.random.randint(1, breedte, 100)
+                yrandnums= np.random.randint(1, lengte, 100)
+                statuslijst = np.random.choice(['geinfecteerd', 'gezond'], 100, p=[0.2, 0.8])
+                fig, ax = plt.subplots()
+                plot(xrandnums, yrandnums, statuslijst, ax)
+                while True:
+                    plt.pause(1)
+                    for i in range(0, 100, 1):
+                        if statuslijst[i] == 'gezond':
+                            for j in range(0, 100):
+                                if i != j and statuslijst[j] == 'geinfecteerd':
+                                    afstand = math.sqrt((xrandnums[i]-xrandnums[j])**2 + (yrandnums[i]-yrandnums[j])**2)
+                                    afstandlijst.append(afstand)
+                                kans = 1
+                                for x in afstandlijst:
+                                    kans = kans * (1 - (0.5**x))
+                                infectie_kans = 1 - kans
+                        else:
+                            infectie_kans = 0
+                        infectiekanslijst.append(infectie_kans)
+                        afstandlijst.clear()
+                    
+                    for i in range(0, len(infectiekanslijst), 1):
+                        if infectiekanslijst[i] * 100 > random.randint(0, 99):
+                            statuslijst[i] = 'geinfecteerd'
+                    ax.clear()
+                    plot(xrandnums, yrandnums, statuslijst, ax)
+                    infectiekanslijst = []
+            elif type(self.invulling) == list:
+                
+                afstandlijst = []
+                infectiekanslijst = []
+                
+                breedte = self.kolom
+                lengte = self.rij                
+                xrandnums= np.random.randint(1, breedte, 100 - len(self.invulling))
+                yrandnums= np.random.randint(1, lengte, 100 - len(self.invulling))
+                statuslijst = np.random.choice(['geinfecteerd', 'gezond'], 100-len(self.invulling), p=[0, 1])
+                for i in range(0, len(self.invulling), 1):
+                    xrandnums = np.append(xrandnums, self.invulling[i][0])
+                    yrandnums = np.append(yrandnums, self.invulling[i][1])
+                    statuslijst = np.append(statuslijst, 'geinfecteerd')
+                fig, ax = plt.subplots()
+                plot(xrandnums, yrandnums, statuslijst, ax)
+                while True:
+                    plt.pause(1)
+                    for i in range(0, 100, 1):
+                        if statuslijst[i] == 'gezond':
+                            for j in range(0, 100):
+                                if i != j and statuslijst[j] == 'geinfecteerd':
+                                    afstand = math.sqrt((xrandnums[i]-xrandnums[j])**2 + (yrandnums[i]-yrandnums[j])**2)
+                                    afstandlijst.append(afstand)
+                                kans = 1
+                                for x in afstandlijst:
+                                    kans = kans * (1 - (0.5**x))
+                                infectie_kans = 1 - kans
+                        else:
+                            infectie_kans = 0
+                        infectiekanslijst.append(infectie_kans)
+                        afstandlijst.clear()
+                    
+                    for i in range(0, len(infectiekanslijst), 1):
+                        if infectiekanslijst[i] * 100 > random.randint(0, 99):
+                            statuslijst[i] = 'geinfecteerd'
+                    ax.clear()
+                    plot(xrandnums, yrandnums, statuslijst, ax)
+                    infectiekanslijst = []
+            else:
+                print('Ingevoerde invulling is niet compatibel met dit programma')
+        else:
+            print('Ingevoerde simulatie is niet compatibel met dit programma')
